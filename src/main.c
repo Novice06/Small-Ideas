@@ -4,13 +4,11 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#define TITLE "pixel editor"
 #define WIDTH 640
 #define HEIGHT 480
 #define ASCII_WIDTH 180
 #define ASCII_HEIGHT 130
 
-//sortit standard d'erreur SDL
 #define ERROR_SDL(__message__)\
     fprintf(stderr, "file: %s, error at line: %d\n\t%s : %s\n", __FILE__, __LINE__, __message__, SDL_GetError());
 
