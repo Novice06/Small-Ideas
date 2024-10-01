@@ -1,0 +1,20 @@
+CC = gcc
+CFLAG = -Wall
+LDFLAG = -L lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image
+
+TARGET = pixelEditor
+
+
+all: bin/$(TARGET)
+
+bin/$(TARGET): obj/main.o
+	$(CC) $^ -o $@ $(LDFLAG)
+
+obj/main.o: src/main.c
+	$(CC) $(CFLAG) -o $@ -c $<
+
+clean:
+	-del obj\*.o
+
+mproper: clean
+	-del bin\$(TARGET).exe
