@@ -82,7 +82,7 @@ void promptPurify(char* prompt)
     char *index = prompt;
 
     // counting leading white spaces
-    while(*index == ' ')
+    while(*index == ' ' || *index == '\t')
     {
         spaceCount++;
         index++;
@@ -103,7 +103,7 @@ void promptPurify(char* prompt)
     index--;
 
     //filling ending spaces with zero
-    while(*index == ' ')
+    while(*index == ' ' || *index == '\t')
     {
         *index = '\0';
         index--;
