@@ -73,11 +73,15 @@ char* shellRead()
         }
     }
 }
-
+/*
+* strip leading and trailing spaces from a string
+*/
 void promptPurify(char* prompt)
 {
     short spaceCount = 0;
     char *index = prompt;
+
+    // counting leading white spaces
     while(*index == ' ')
     {
         spaceCount++;
@@ -87,6 +91,7 @@ void promptPurify(char* prompt)
     index = prompt;
     prompt = prompt + spaceCount;
 
+    //shifting the string to fill the spaces
     while(*prompt != '\0')
     {
         *index = *prompt;
@@ -97,6 +102,7 @@ void promptPurify(char* prompt)
     *index = '\0';
     index--;
 
+    //filling ending spaces with zero
     while(*index == ' ')
     {
         *index = '\0';
@@ -118,7 +124,7 @@ char** shellParse(char* prompt)
         exit(EXIT_FAILURE);
     }
     
-    promptPurify(prompt); // ignoring begining and leading white spaces
+    promptPurify(prompt); // ignoring leading and trailing spaces
 
     begin = prompt;
     end = begin;
