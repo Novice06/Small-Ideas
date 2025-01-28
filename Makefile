@@ -5,12 +5,18 @@ BUILD_DIR = build
 OBJECT_DIR = obj
 
 
-all: asciiArt
+all: asciiArt Cshell
 
 asciiArt: $(OBJECT_DIR)/asciiArt.o
 	$(CC) $^ -o $(BUILD_DIR)/$@ $(LDFLAG)
 
 $(OBJECT_DIR)/asciiArt.o: asciiArt.c
+	$(CC) $(CFLAG) -o $@ -c $<
+
+Cshell: $(OBJECT_DIR)/Cshell.o
+	$(CC) $^ -o $(BUILD_DIR)/$@
+
+$(OBJECT_DIR)/Cshell.o: Cshell.c
 	$(CC) $(CFLAG) -o $@ -c $<
 
 clean:
