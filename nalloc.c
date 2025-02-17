@@ -1,0 +1,147 @@
+#include <unistd.h>
+#include <stdio.h>
+#include <stdint.h>
+
+typedef struct Nalloc_header Nalloc_header;
+
+struct Nalloc_header{
+    size_t size;
+    uint8_t isFree;
+    Nalloc_header *next;
+};
+
+Nalloc_header *head, *tail;
+
+Nalloc_header* search_freeBlock(size_t size)
+{
+    Nalloc_header *header = head;
+    while(header != NULL)
+    {
+        if(header->size >= size && header->isFree)
+            return header;
+
+        header = header->next;
+    }
+
+    return NULL;
+}
+/*
+* +---------+-----------------+
+* | header  | bloc allocated  |
+* +---------+-----------------+
+*/
+void* nalloc(size_t size)
+{
+    void *block;
+    Nalloc_header *header = NULL;
+    size_t totalSize = sizeof(Nalloc_header) + size;
+
+    header = search_freeBlock(size);
+    if(header)
+    {
+        header->isFree = 0;
+        return ((void*)header + sizeof(Nalloc_header));
+    }
+
+    block = sbrk(totalSize);
+    if(block == (void*) -1)
+        return NULL;
+
+    header = (Nalloc_header*)block;
+    header->size = size;
+    header->isFree = 0;
+    header->next = NULL;
+
+    if(!head)
+        head = header;
+    
+    if(tail)
+        tail->next = header;
+
+    tail = header;
+
+    block += sizeof(Nalloc_header);
+
+    return block;
+}
+
+void free_nalloc(void* block)
+{
+    Nalloc_header *header = (Nalloc_header*)(block - sizeof(Nalloc_header));
+    size_t totalSize = sizeof(Nalloc_header) + header->size;
+
+    // if it's the last block we need to release the memory to the OS
+    if(header == tail)      //(block + header->size) == sbrk(0)
+    {
+        if(tail == head)    // if it's the first element in the linked list
+        {
+            tail = NULL;
+            head = NULL;
+            sbrk(-1 * totalSize);
+        }else{
+            Nalloc_header *tempTail = head;
+            while(tempTail->next != tail)
+                tempTail = tempTail->next;
+
+            tail = tempTail;
+            tail->next = NULL;
+
+            sbrk(-1 * totalSize);
+        }
+    }else{  // set the block to free
+        header->isFree = 1;
+    }
+}
+
+void nallocTest()
+{
+    int* test = nalloc(sizeof(int) * 5);
+    int* test0 = nalloc(sizeof(int) * 10);
+    int* test1 = nalloc(sizeof(int) * 15);
+
+    Nalloc_header *temp = head;
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
+
+    free_nalloc(test0); // freeing a block in the middle
+
+    temp = head;
+    printf("\n\n");
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
+
+    int* test2 = nalloc(sizeof(int) * 3);   // add a block in the middle
+
+    temp = head;
+    printf("\n\n");
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
+
+    free_nalloc(test1);     // freeing the last block
+
+    temp = head;
+    printf("\n\n");
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
+}
+
+int main()
+{
+    nallocTest();
+}

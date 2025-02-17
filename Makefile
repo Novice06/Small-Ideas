@@ -5,7 +5,7 @@ BUILD_DIR = build
 OBJECT_DIR = obj
 
 
-all: asciiArt Cshell
+all: asciiArt Cshell nalloc
 
 asciiArt: $(OBJECT_DIR)/asciiArt.o
 	$(CC) $^ -o $(BUILD_DIR)/$@ $(LDFLAG)
@@ -17,6 +17,12 @@ Cshell: $(OBJECT_DIR)/Cshell.o
 	$(CC) $^ -o $(BUILD_DIR)/$@
 
 $(OBJECT_DIR)/Cshell.o: Cshell.c
+	$(CC) $(CFLAG) -o $@ -c $<
+
+nalloc: $(OBJECT_DIR)/nalloc.o
+	$(CC) $^ -o $(BUILD_DIR)/$@
+
+$(OBJECT_DIR)/nalloc.o: nalloc.c
 	$(CC) $(CFLAG) -o $@ -c $<
 
 clean:
