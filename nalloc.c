@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 typedef struct Nalloc_header Nalloc_header;
 
@@ -36,6 +37,9 @@ void* nalloc(size_t size)
     Nalloc_header *header = NULL;
     size_t totalSize = sizeof(Nalloc_header) + size;
 
+    if(!size)
+        return NULL;
+
     header = search_freeBlock(size);
     if(header)
     {
@@ -63,6 +67,25 @@ void* nalloc(size_t size)
     block += sizeof(Nalloc_header);
 
     return block;
+}
+
+void* canalloc(size_t num, size_t size)
+{
+    size_t totalSize = num * size;
+
+    if(!num || !size)
+        return NULL;
+
+    if(num != totalSize / size) // check mul overflow 
+        return NULL;
+
+    void* pointer = nalloc(totalSize);
+    if(!pointer)
+        return NULL;
+
+    memset(pointer, 0, totalSize);
+    
+    return pointer;
 }
 
 void free_nalloc(void* block)
@@ -130,6 +153,17 @@ void nallocTest()
     }
 
     free_nalloc(test1);     // freeing the last block
+
+    temp = head;
+    printf("\n\n");
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
+
+    test1 = canalloc(15, sizeof(int)); // using calloc
 
     temp = head;
     printf("\n\n");
