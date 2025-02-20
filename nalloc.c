@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <string.h>
 
+void free_nalloc(void* block);
+void* renalloc(void* block, size_t size);
+void* canalloc(size_t num, size_t size);
+void* nalloc(size_t size);
+
 typedef struct Nalloc_header Nalloc_header;
 
 struct Nalloc_header{
@@ -28,7 +33,7 @@ Nalloc_header* search_freeBlock(size_t size)
 }
 /*
 * +---------+-----------------+
-* | header  | bloc allocated  |
+* | header  | block allocated  |
 * +---------+-----------------+
 */
 void* nalloc(size_t size)
@@ -47,15 +52,17 @@ void* nalloc(size_t size)
         return ((void*)header + sizeof(Nalloc_header));
     }
 
-    block = sbrk(totalSize);
+    block = sbrk(totalSize);    // requesting memory from the heap
     if(block == (void*) -1)
         return NULL;
 
+    //filling header information
     header = (Nalloc_header*)block;
     header->size = size;
     header->isFree = 0;
     header->next = NULL;
 
+    // now our linked list of allocated block
     if(!head)
         head = header;
     
@@ -86,6 +93,24 @@ void* canalloc(size_t num, size_t size)
     memset(pointer, 0, totalSize);
     
     return pointer;
+}
+
+void* renalloc(void* block, size_t size)
+{
+    Nalloc_header* header = block - sizeof(Nalloc_header);
+    void* newBlock;
+
+    if(header->size >= size)
+        return block;
+
+    newBlock = nalloc(size);
+    if(!newBlock)
+        return NULL;
+
+    memcpy(newBlock, block, header->size);
+    free_nalloc(block);
+
+    return newBlock;
 }
 
 void free_nalloc(void* block)
@@ -141,7 +166,7 @@ void nallocTest()
         temp = temp->next;
     }
 
-    int* test2 = nalloc(sizeof(int) * 3);   // add a block in the middle
+    test = renalloc(test, sizeof(int) * 7);   // add a block in the middle using renalloc
 
     temp = head;
     printf("\n\n");
@@ -163,7 +188,7 @@ void nallocTest()
         temp = temp->next;
     }
 
-    test1 = canalloc(15, sizeof(int)); // using calloc
+    test1 = canalloc(15, sizeof(int)); // using canalloc
 
     temp = head;
     printf("\n\n");
