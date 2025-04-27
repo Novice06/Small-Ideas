@@ -19,10 +19,13 @@ Cshell: $(OBJECT_DIR)/Cshell.o
 $(OBJECT_DIR)/Cshell.o: Cshell.c
 	$(CC) $(CFLAG) -o $@ -c $<
 
-nalloc: $(OBJECT_DIR)/nalloc.o
+nalloc: $(OBJECT_DIR)/ordered_array.o $(OBJECT_DIR)/nalloc.o
 	$(CC) $^ -o $(BUILD_DIR)/$@
 
 $(OBJECT_DIR)/nalloc.o: nalloc.c
+	$(CC) $(CFLAG) -o $@ -c $<
+
+$(OBJECT_DIR)/ordered_array.o: ordered_array.c
 	$(CC) $(CFLAG) -o $@ -c $<
 
 clean:
