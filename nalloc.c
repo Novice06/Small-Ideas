@@ -65,18 +65,17 @@ void* nalloc(size_t size)
             newHeader->size = header->size - size - sizeof(Nalloc_header);
             newHeader->isFree = true;
             newHeader->back = header;
-            newHeader->next = NULL;
+            newHeader->next = header->next;
 
             if(header->next != NULL)
-            {
-                newHeader->next = header->next;
                 header->next->back = newHeader;
-            }
 
             insert_ordered_array(newHeader, &array); // add a new free block !
 
             header->next = newHeader;
             header->size = size;
+
+            free_nalloc((void*)newHeader + sizeof(Nalloc_header));  // add a new free block !
 
             if(header == tail)
                 tail = newHeader;
@@ -134,8 +133,18 @@ void* canalloc(size_t num, size_t size)
 
 void* renalloc(void* block, size_t size)
 {
-    Nalloc_header* header = (Nalloc_header*)(block - sizeof(Nalloc_header));
     void* newBlock;
+
+    if(block == NULL)
+    {
+        newBlock = nalloc(size);
+        if(!newBlock)
+            return NULL;
+
+        return newBlock;
+    }
+
+    Nalloc_header* header = (Nalloc_header*)(block - sizeof(Nalloc_header));
 
     if(header->size >= size)
         return block;
@@ -156,14 +165,14 @@ void free_nalloc(void* block)
     Nalloc_header *header = (Nalloc_header*)(block - sizeof(Nalloc_header));
     size_t totalSize = 0;
 
-    header->isFree = true;
-    insert_ordered_array((type_t)header, &array);
+    if(header->isFree)
+        return; // nothing to do
 
     // merging left block if it's free
     left_block = header->back;
     if(left_block != NULL && left_block->isFree)
     {
-        remove_ordered_array(getIndex_ordered_array(header, &array), &array);
+        remove_ordered_array(getIndex_ordered_array(left_block, &array), &array);
 
         left_block->size += header->size + sizeof(Nalloc_header);
         left_block->next = header->next;
@@ -192,6 +201,9 @@ void free_nalloc(void* block)
         if(right_block == tail) // if we are merging the last block
             tail = header;      // the last block become the left one in this case the header
     }
+
+    header->isFree = true;
+    insert_ordered_array((type_t)header, &array);
 
     totalSize = sizeof(Nalloc_header) + header->size;
 
