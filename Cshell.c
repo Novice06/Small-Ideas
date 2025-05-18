@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -110,12 +111,40 @@ void promptPurify(char* prompt)
     }
 }
 
+void promptShift(char* source, int places)
+{
+    char* index = source + places;
+
+    if(*index == '\0') // if you shift the whole string
+    {
+        *source = '\0';
+        return;
+    }
+
+    //shifting the string
+    while(*index != '\0' && *source != '\0')
+    {
+        *source = *index;
+        index++;
+        source++;
+    }
+
+    *source = '\0';
+}
+
+typedef enum {
+    QUOTE_STATE_FREE,
+    WAIT_FOR_SINGLE_QUOTE,
+    WAIT_FOR_DOUBLE_QUOTE,
+}QUOTE_FLAG_STATE;
+
 char** shellParse(char* prompt)
 {
     char *begin, *end;
     char **args;
     int position = 0;
-    char quoteFlag = 0; // used to handle the "" or '' on the prompt
+    bool quoteFlag = false; // used to handle the "" or '' on the prompt
+    QUOTE_FLAG_STATE quoteFlagState = QUOTE_STATE_FREE;
 
     args = malloc(sizeof(char*) * BUFFER_ARGS_SIZE);
     if(args == NULL)
@@ -135,8 +164,45 @@ char** shellParse(char* prompt)
         * when a quotation mark is uncountered for the first time the quoteFlag is set
         * and unset when uncountered for the second time
         */
-        if(*end == '"' || *end == '\'')
-            quoteFlag ^= 1; // set or unset the flag when the " or ' character is uncountered
+
+        if(quoteFlagState == QUOTE_STATE_FREE)
+        {
+            switch (*end)
+            {
+            case '"':
+                quoteFlag = true;
+                quoteFlagState = WAIT_FOR_DOUBLE_QUOTE;
+                promptShift(end, 1);    // get rid of that character
+                break;
+
+            case '\'':
+                quoteFlag = true;
+                quoteFlagState = WAIT_FOR_SINGLE_QUOTE;
+                promptShift(end, 1);
+                break;
+            
+            default:
+                break;
+            }
+        }
+        else if(quoteFlagState == WAIT_FOR_DOUBLE_QUOTE)
+        {
+            if(*end == '"')
+            {
+                quoteFlag = false;
+                quoteFlagState = QUOTE_STATE_FREE;
+                promptShift(end, 1);
+            }
+        }
+        else
+        {
+            if(*end == '\'')
+            {
+                quoteFlag = false;
+                quoteFlagState = QUOTE_STATE_FREE;
+                promptShift(end, 1);
+            }
+        }
 
         // if the quoteFlag is set we don't need to split the spaces between the quotation mark
         if(quoteFlag == 0 && (*end == ' ' || *end == '\t'))
